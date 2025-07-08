@@ -224,7 +224,13 @@ def consolidate_nodes(tfdata: dict):
             connected_resource = consolidated_name
         else:
             connected_resource = resource
-        for index, connection in enumerate(tfdata["graphdict"][connected_resource]):
+        try:
+            connections = tfdata["graphdict"][connected_resource]
+        except KeyError:
+            click.echo(f"Warning: Resource '{connected_resource}' not found in graphdict. Skipping.")
+            continue
+        
+        for index, connection in enumerate(connections):
             if helpers.consolidated_node_check(connection):
                 consolidated_connection = helpers.consolidated_node_check(connection)
                 if consolidated_connection and consolidated_connection != connection:

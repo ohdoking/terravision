@@ -2,6 +2,7 @@ from debugpy import connect
 import modules.cloud_config as cloud_config
 import modules.helpers as helpers
 from ast import literal_eval
+import click
 
 REVERSE_ARROW_LIST = cloud_config.AWS_REVERSE_ARROW_LIST
 IMPLIED_CONNECTIONS = cloud_config.AWS_IMPLIED_CONNECTIONS
@@ -403,28 +404,37 @@ def aws_handle_lb(tfdata: dict):
 
 
 def aws_handle_dbsubnet(tfdata: dict):
-    db_subnet_list = helpers.list_of_dictkeys_containing(
-        tfdata["graphdict"], "aws_db_subnet_group"
-    )
-    for dbsubnet in db_subnet_list:
-        db_grouping = helpers.list_of_parents(tfdata["graphdict"], dbsubnet)
-        if db_grouping:
-            for subnet in db_grouping:
-                if helpers.get_no_module_name(subnet).startswith("aws_subnet"):
-                    tfdata["graphdict"][subnet].remove(dbsubnet)
-                    az = helpers.list_of_parents(tfdata["graphdict"], subnet)[0]
-                    vpc = helpers.list_of_parents(tfdata["graphdict"], az)[0]
-                    if dbsubnet not in tfdata["graphdict"][vpc]:
-                        tfdata["graphdict"][vpc].append(dbsubnet)
-            for rds in tfdata["graphdict"][dbsubnet]:
-                rds_references = helpers.list_of_parents(tfdata["graphdict"], rds)
-                for check_sg in rds_references:
-                    if helpers.get_no_module_name(check_sg).startswith(
-                        "aws_security_group"
-                    ):
-                        tfdata["graphdict"][vpc].remove(dbsubnet)
-                        tfdata["graphdict"][vpc].append(check_sg)
-                        break
+    try:
+        db_subnet_list = helpers.list_of_dictkeys_containing(
+            tfdata["graphdict"], "aws_db_subnet_group"
+        )
+        for dbsubnet in db_subnet_list:
+            db_grouping = helpers.list_of_parents(tfdata["graphdict"], dbsubnet)
+            if db_grouping:
+                vpc = None  # Initialize vpc variable
+                for subnet in db_grouping:
+                    if helpers.get_no_module_name(subnet).startswith("aws_subnet"):
+                        tfdata["graphdict"][subnet].remove(dbsubnet)
+                        az_list = helpers.list_of_parents(tfdata["graphdict"], subnet)
+                        if az_list:
+                            az = az_list[0]
+                            vpc_list = helpers.list_of_parents(tfdata["graphdict"], az)
+                            if vpc_list:
+                                vpc = vpc_list[0]
+                                if dbsubnet not in tfdata["graphdict"][vpc]:
+                                    tfdata["graphdict"][vpc].append(dbsubnet)
+                for rds in tfdata["graphdict"][dbsubnet]:
+                    rds_references = helpers.list_of_parents(tfdata["graphdict"], rds)
+                    for check_sg in rds_references:
+                        if helpers.get_no_module_name(check_sg).startswith(
+                            "aws_security_group"
+                        ):
+                            if vpc and vpc in tfdata["graphdict"]:
+                                tfdata["graphdict"][vpc].remove(dbsubnet)
+                                tfdata["graphdict"][vpc].append(check_sg)
+                            break
+    except Exception as e:
+        print(f"Warning: Error handling DB subnet relationships: {str(e)}")
     return tfdata
 
 

@@ -215,8 +215,19 @@ def tf_makegraph(tfdata: dict):
         if nodename in gvid_table:
             node_id = gvid_table.index(nodename)
         else:
+            original_nodename = nodename
             nodename = helpers.remove_brackets_and_numbers(nodename)
-            node_id = gvid_table.index(nodename)
+            try:
+                node_id = gvid_table.index(nodename)
+            except ValueError:
+                print(f"Error: Node '{original_nodename}' not found in gvid_table")
+                print(f"Available nodes in gvid_table: {gvid_table}")
+                print(f"Node format: {nodename}")
+                continue  # Skip this node if we can't find it
+                
+        if node_id is None:
+            print(f"Warning: Could not determine node_id for node: {node}")
+            continue
         if tfdata["tfgraph"].get("edges"):
             for connection in tfdata["tfgraph"]["edges"]:
                 head = connection["head"]
