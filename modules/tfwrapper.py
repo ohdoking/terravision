@@ -19,7 +19,8 @@ temp_dir = tempfile.TemporaryDirectory(dir=tempfile.gettempdir())
 os.environ["TF_DATA_DIR"] = temp_dir.name
 abspath = os.path.abspath(__file__)
 dname = os.path.dirname(abspath)
-MODULE_DIR = str(Path(Path.home(), ".terravision", "module_cache"))
+# MODULE_DIR = str(Path(Path.home(), ".terravision", "module_cache"))
+MODULE_DIR = str(Path("/tmp", ".terravision", "module_cache"))
 REVERSE_ARROW_LIST = cloud_config.AWS_REVERSE_ARROW_LIST
 
 

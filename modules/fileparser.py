@@ -18,7 +18,8 @@ start_dir = Path.cwd()
 temp_dir = tempfile.TemporaryDirectory(dir=tempfile.gettempdir())
 abspath = os.path.abspath(__file__)
 dname = os.path.dirname(abspath)
-MODULE_DIR = str(Path(Path.home(), ".terravision", "module_cache"))
+# MODULE_DIR = str(Path(Path.home(), ".terravision", "module_cache"))
+MODULE_DIR = str(Path("/tmp", ".terravision", "module_cache"))
 if not os.path.exists(MODULE_DIR):
     os.makedirs(MODULE_DIR)
 
