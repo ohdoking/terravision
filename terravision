@@ -108,12 +108,14 @@ def preflight_check():
             sys.exit()
     # check the terraform version is suitable for terravision
     click.echo(click.style("\nChecking Terraform Version...", fg="white", bold=True))
-    returncode = os.system("terraform -v >> terraform_version.txt")
+    temp_dir = os.environ.get("TMPDIR", "/tmp")
+    version_file_path = os.path.join(temp_dir, "terraform_version.txt")
+    returncode = os.system(f"terraform -v >> {version_file_path}")
     # read the file and ensure the version is correct
-    with open("terraform_version.txt", "r") as fh:
+    with open(version_file_path, "r") as fh:
         data = fh.read().split("\n")
 
-    os.remove("terraform_version.txt")
+    os.remove(version_file_path)
 
     # take just the first line
     version_line = data[0]
