@@ -122,13 +122,47 @@ def tf_initplan(source: tuple, varfile: list, workspace: str):
                 )
             )
             if os.path.exists(tfgraph_path):
-                dot_cmd = f"dot -Txdot_json -o {tfgraph_json_path} {tfgraph_path}"
-                returncode = os.system(dot_cmd)
+                import subprocess
+                dot_cmd = ["dot", "-Txdot_json", "-o", tfgraph_json_path, tfgraph_path]
                 
-                if returncode != 0 or not os.path.exists(tfgraph_json_path):
+                try:
+                    result = subprocess.run(
+                        dot_cmd,
+                        capture_output=True,
+                        text=True,
+                        check=True
+                    )
+                    returncode = result.returncode
+                except subprocess.CalledProcessError as e:
                     click.echo(
                         click.style(
-                            f"\nERROR: Failed to generate graph JSON. Ensure Graphviz is installed and in your PATH.\nCommand: {dot_cmd}",
+                            f"\nERROR: Failed to generate graph JSON.\n"
+                            f"Command: {' '.join(dot_cmd)}\n"
+                            f"Exit code: {e.returncode}\n"
+                            f"Error output:\n{e.stderr}",
+                            fg="red",
+                            bold=True,
+                        )
+                    )
+                    exit(1)
+                except FileNotFoundError:
+                    click.echo(
+                        click.style(
+                            "\nERROR: 'dot' command not found. Please ensure Graphviz is installed and in your PATH.\n"
+                            "Installation instructions:\n"
+                            "  macOS: brew install graphviz\n"
+                            "  Ubuntu/Debian: sudo apt-get install graphviz\n"
+                            "  RHEL/CentOS: sudo yum install graphviz",
+                            fg="red",
+                            bold=True,
+                        )
+                    )
+                    exit(1)
+                
+                if not os.path.exists(tfgraph_json_path):
+                    click.echo(
+                        click.style(
+                            f"\nERROR: Failed to generate graph JSON file at {tfgraph_json_path}",
                             fg="red",
                             bold=True,
                         )
