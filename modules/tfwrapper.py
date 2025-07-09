@@ -122,11 +122,31 @@ def tf_initplan(source: tuple, varfile: list, workspace: str):
                 )
             )
             if os.path.exists(tfgraph_path):
-                returncode = os.system(
-                    f"dot -Txdot_json -o {tfgraph_json_path} {tfgraph_path}"
-                )
-                f = open(tfgraph_json_path)
-                graphdata = json.load(f)
+                dot_cmd = f"dot -Txdot_json -o {tfgraph_json_path} {tfgraph_path}"
+                returncode = os.system(dot_cmd)
+                
+                if returncode != 0 or not os.path.exists(tfgraph_json_path):
+                    click.echo(
+                        click.style(
+                            f"\nERROR: Failed to generate graph JSON. Ensure Graphviz is installed and in your PATH.\nCommand: {dot_cmd}",
+                            fg="red",
+                            bold=True,
+                        )
+                    )
+                    exit(1)
+                    
+                try:
+                    with open(tfgraph_json_path, 'r') as f:
+                        graphdata = json.load(f)
+                except (IOError, json.JSONDecodeError) as e:
+                    click.echo(
+                        click.style(
+                            f"\nERROR: Failed to read or parse graph JSON: {str(e)}",
+                            fg="red",
+                            bold=True,
+                        )
+                    )
+                    exit(1)
             else:
                 click.echo(
                     click.style(
